@@ -52,26 +52,38 @@ function main(fileNames) {
 // Implement the async version of the above here
 // Your version should not use .then and should use try/catch instead of .catch
 async function mainAsync(fileNames) {
-    // Your code here
     for (const fileName of fileNames) {
-        try{
+        try {
             console.log(`Running logo detection on ${fileName}`);
+            // Await the logo detection result
             const [detect] = await client.logoDetection(fileName);
-            let scores = [];
-            const logos = detect.logoAnnotations;
-            logos?.forEach((logo) => {
-                if (logo.description)
-                    console.log(`"${logo.description}" found in in file ${fileName}`);
-                if (logo.score)
+            const logos = detect.logoAnnotations ?? [];
+            const scores = [];
+            // Iterate through detected logos
+            for (const logo of logos) {
+                if (logo.description) {
+                    console.log(`"${logo.description}" found in file ${fileName}`);
+                }
+                if (typeof logo.score === "number") {
                     scores.push(logo.score);
-            });
-            const avg = scores.reduce((a, b) => a + b) / scores.length;
+                }
+            }
+            // Compute average score safely
+            const avg = scores.length > 0
+                ? scores.reduce((a, b) => a + b, 0) / scores.length
+                : 0;
             console.log(`Average score for ${fileName}: ${avg}`);
-        } catch (err) {
-                if (err?.code === 'ENOENT')
-                    console.error(`File ${fileName} not found`);
-                else if (err.code == 7)
-                    console.error(err.details);
+        }
+        catch (err) {
+            if (err?.code === "ENOENT") {
+                console.error(`File ${fileName} not found`);
+            }
+            else if (err?.code === 7) {
+                console.error(err.details ?? err.message);
+            }
+            else {
+                console.error(`Unexpected error for ${fileName}:`, err);
+            }
         }
     }
 }

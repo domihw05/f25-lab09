@@ -56,8 +56,43 @@ function main (fileNames: string[]): void {
 // Implement the async version of the above here
 // Your version should not use .then and should use try/catch instead of .catch
 async function mainAsync(fileNames: string[]): Promise<void> {
-    console.error(new Error("mainAsync not implemented"));
-    // Your code here
+    for (const fileName of fileNames) {
+    try {
+      console.log(`Running logo detection on ${fileName}`);
+
+      // Await the logo detection result
+      const [detect] = await client.logoDetection(fileName);
+      const logos = detect.logoAnnotations ?? [];
+
+      const scores: number[] = [];
+
+      // Iterate through detected logos
+      for (const logo of logos) {
+        if (logo.description) {
+          console.log(`"${logo.description}" found in file ${fileName}`);
+        }
+        if (typeof logo.score === "number") {
+          scores.push(logo.score);
+        }
+      }
+
+      // Compute average score safely
+      const avg =
+        scores.length > 0
+          ? scores.reduce((a, b) => a + b, 0) / scores.length
+          : 0;
+
+      console.log(`Average score for ${fileName}: ${avg}`);
+    } catch (err: any) {
+      if (err?.code === "ENOENT") {
+        console.error(`File ${fileName} not found`);
+      } else if (err?.code === 7) {
+        console.error(err.details ?? err.message);
+      } else {
+        console.error(`Unexpected error for ${fileName}:`, err);
+      }
+    }
+  }
 }
 
 main([
